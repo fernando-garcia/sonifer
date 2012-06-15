@@ -66,7 +66,7 @@ for (i in 1:nper) {
 
 ### True MIC
 
-MICbuenos <- readMINEResults("MINE.output.csv") # FG: Esta funcion devuelve un vector con los MICs del fichero csv
+MICbuenos <- readMINEResults("data/MINE.output.csv") # FG: Esta funcion devuelve un vector con los MICs del fichero csv
 # hay que tomar solo el valor MIC
 # tienes que asegurarte de que las comparaciones de parejas de genes estan
 # en el mismo orden en MICper y en MICbuenos
