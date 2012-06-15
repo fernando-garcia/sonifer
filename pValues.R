@@ -21,7 +21,7 @@ readMINEResults <- function(file){
 
 factorial(7) # 7! = 5040 -> number of different permutations of variable Y
 
-# misdatos : 1611 rows, 7 columns
+misdatos <- read.csv("data/datos.originales.txt",head=F,row.names=1) # misdatos : 1611 rows, 7 columns
 
 
 ### MIC from permutated data
