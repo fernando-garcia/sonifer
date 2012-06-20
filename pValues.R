@@ -14,7 +14,11 @@ getMIC <- function(orig,perm, output="tmp"){
 
 readMINEResults <- function(file){
   tmpF <- read.csv(file)
-  tmpF[,3]
+  mynames <- t(apply(tmpF[,1:2], 1, sort))
+  mynames <- apply(mynames, 1, paste, collapse = ";")
+  tmpF <- tmpF[,3]
+  names(tmpF) <- mynames
+  tmpF
 }
 
 
@@ -24,41 +28,41 @@ factorial(7) # 7! = 5040 -> number of different permutations of variable Y
 misdatos <- read.csv("data/datos.originales.txt",head=F,row.names=1) # misdatos : 1611 rows, 7 columns
 
 
+
+
 ### MIC from permutated data
 
 nper <- 1000  # number of permutations to be done
 
 MICper <- matrix(NA, nrow = nrow(misdatos)*(nrow(misdatos)-1)/2, ncol = nper)
 
+
+# generating gene comparisons for MIC and using them as rownames of MICper
+mygenes <- rownames(misdatos)
+
+mycombi <- combn(length(mygenes), 2)
+
+mycompar <- apply(mycombi, 2, function (x) { paste(sort(mygenes[x]), collapse = ";") }) 
+
+rownames(MICper) <- mycompar
+
+
+
+# computing MICper
 for (i in 1:nper) {
 
  # permutation of original data (no need of permuting row 1)
- miper <- t(apply(misdatos[-1,], 1, sample))
+ miper <- t(apply(misdatos, 1, sample))
 
  # now we compute MIC between each row of original data
  # and the rest of permutated rows
- fila <- 1
 
- for (j in 1:(nrow(misdatos)-1)) {
+ for (j in 1:length(mycompar)) {
 
-   for (k in j:nrow(miper)) {
+   myMIC <- getMIC(misdatos[mycombi[1,j],], miper[mycombi[2,j],])
 
-     myMIC <- getMIC(misdatos[j,], miper[k,])
-       
-       
-     # El myMIC esta patatero, lo tienes que arreglar para que lo calcule.
-     # rMINE te coge el objeto R (no se si como yo lo he escrito)
-     # pero no se si el resultado de lo devuelve en txt o en objeto R
-     # Como devuelve MIC y mas cosas tienes que coger el que quieras
-     # para que myMIC sea un solo valor
-
-     MICper[fila,i] <- myMIC
-
-     fila <- fila + 1
-
-   }
+   MICper[j,i] <- myMIC
  }
-
 }
 
 
@@ -67,10 +71,11 @@ for (i in 1:nper) {
 ### True MIC
 
 MICbuenos <- readMINEResults("data/MINE.output.csv") # FG: Esta funcion devuelve un vector con los MICs del fichero csv
-# hay que tomar solo el valor MIC
-# tienes que asegurarte de que las comparaciones de parejas de genes estan
-# en el mismo orden en MICper y en MICbuenos
-# si estan en el mismo orden, me lo dices y modificamos codigo
+
+
+# same gene/comparison order in MICper and MICbuenos
+MICper <- MICper[names(MICbuenos),]
+
 
 
 
@@ -87,5 +92,15 @@ for (i in 1:length(MICbuenos)) {
 }
 
 
+
 ### adjusted p-values
 pval.ajustado <- p.adjust(mispvalores)
+
+
+
+### SUMMARY
+
+mysummary <- cbind(mycompar, MICbuenos, mispvalores, pval.ajustado)
+colnames(mysummary) <- c("comparison", "MIC", "pvalue", "adjusted_pvalue")
+
+write.table(mysummary, "results.txt", sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
